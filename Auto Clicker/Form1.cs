@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Auto_Clicker
 {
@@ -26,15 +27,21 @@ namespace Auto_Clicker
         private static extern uint SendInput(uint cInputs, INPUT[] pInputs, int cbSize);
 
         private const uint INPUT_MOUSE = 0;
-        private const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
-        private const uint MOUSEEVENTF_LEFTUP = 0x0004;
-        private const uint MOUSEEVENTF_RIGHTDOWN = 0x0008;
-        private const uint MOUSEEVENTF_RIGHTUP = 0x0010;
+
+        private enum MouseEvent
+        {
+            F_LEFTDOWN = 0x0002,
+            F_LEFTUP = 0x0004,
+            F_RIGHTDOWN = 0x0008,
+            F_RIGHTUP = 0x0010
+        }
 
         private const string LEFT_BUTTON = "Left";
         
         private const string SINGLE_CLICK = "Single";
         private const string DOUBLE_CLICK = "Double";
+
+        private int _finalTime = 0;
 
         private enum Status
         {
@@ -59,6 +66,17 @@ namespace Auto_Clicker
 
             SetStatus(Status.Inactive);
         }
+
+        private (int hours, int minutes, int seconds, int milliseconds) ParseTimeInputs()
+        {
+            int hours = int.TryParse(textBox1.Text, out var h) ? h : 0;
+            int minutes = int.TryParse(textBox2.Text, out var m) ? m : 0;
+            int seconds = int.TryParse(textBox3.Text, out var s) ? s : 0;
+            int milliseconds = int.TryParse(textBox4.Text, out var ms) ? ms : 0;
+
+            return (hours, minutes, seconds, milliseconds);
+        }
+
         private void StartClicking()
         {
             if (!ValidateInputs())
@@ -70,6 +88,10 @@ namespace Auto_Clicker
             clickType = comboBox2.GetItemText(comboBox2.SelectedItem) ?? SINGLE_CLICK;
 
             _cancellationTokenSource = new CancellationTokenSource();
+            
+            var (timeHour, timeMinute, timeSecond, timeMillisec) = ParseTimeInputs();
+            _finalTime = (timeHour * 3600 + timeMinute * 60 + timeSecond) * 1000 + timeMillisec;
+
             Task.Run(() => Clicker(_cancellationTokenSource.Token));
             SetStatus(Status.Active);
         }
@@ -84,19 +106,12 @@ namespace Auto_Clicker
 
         private async Task Clicker(CancellationToken Token)
         {
-            int timeHour = int.Parse(textBox1.Text);
-            int timeMinute = int.Parse(textBox2.Text);
-            int timeSecond = int.Parse(textBox3.Text);
-            int timeMillisec = int.Parse(textBox4.Text);
-
-            int finalTime = (timeHour * 3600 + timeMinute * 60 + timeSecond) * 1000 + timeMillisec;
-
             if (radioButton1.Checked)
             {
                 while (!Token.IsCancellationRequested)
                 {
                     ClickMouse();
-                    await Task.Delay(finalTime, Token).ConfigureAwait(false);
+                    await Task.Delay(_finalTime, Token).ConfigureAwait(false);
                 }
             }
             else if (radioButton2.Checked)
@@ -110,7 +125,7 @@ namespace Auto_Clicker
                     }
 
                     ClickMouse();
-                    await Task.Delay(finalTime, Token).ConfigureAwait(false);
+                    await Task.Delay(_finalTime, Token).ConfigureAwait(false);
                 }
             }
         }
@@ -131,30 +146,23 @@ namespace Auto_Clicker
 
         private void ClickMouse()
         {
-            uint x = radioButton3.Checked ? (uint)Control.MousePosition.X : uint.Parse(textBox6.Text);
-            uint y = radioButton3.Checked ? (uint)Control.MousePosition.Y : uint.Parse(textBox7.Text);
-
             INPUT[] inputs = new INPUT[1];
             inputs[0].type = INPUT_MOUSE;
-            inputs[0].mi.dx = (int)x;
-            inputs[0].mi.dy = (int)y;
+            inputs[0].mi.dx = radioButton3.Checked ? Control.MousePosition.X : int.Parse(textBox6.Text);
+            inputs[0].mi.dy = radioButton3.Checked ? Control.MousePosition.Y : int.Parse(textBox7.Text);
             inputs[0].mi.mouseData = 0;
 
-            uint buttonFlag = mouseButton.Equals(LEFT_BUTTON) ?
-                              (clickType.Equals(DOUBLE_CLICK) ? MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP : MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP) :
-                              (clickType.Equals(DOUBLE_CLICK) ? MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_RIGHTUP : MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_RIGHTUP);
+            uint buttonFlag = (uint)(mouseButton.Equals(LEFT_BUTTON)
+                    ? (clickType.Equals(DOUBLE_CLICK) ? MouseEvent.F_LEFTDOWN | MouseEvent.F_LEFTUP : MouseEvent.F_LEFTDOWN | MouseEvent.F_LEFTUP)
+                    : (clickType.Equals(DOUBLE_CLICK) ? MouseEvent.F_RIGHTDOWN | MouseEvent.F_RIGHTUP : MouseEvent.F_RIGHTDOWN | MouseEvent.F_RIGHTUP));
 
-            if (clickType.Equals(SINGLE_CLICK) || clickType.Equals(DOUBLE_CLICK))
+            // Send first click
+            inputs[0].mi.dwFlags = buttonFlag;
+            _ = SendInput(1, inputs, Marshal.SizeOf(typeof(INPUT)));
+
+            if (clickType.Equals(DOUBLE_CLICK))
             {
-                // First click
-                inputs[0].mi.dwFlags = buttonFlag;
                 _ = SendInput(1, inputs, Marshal.SizeOf(typeof(INPUT)));
-
-                // Second click for double click
-                if (clickType.Equals(DOUBLE_CLICK))
-                {
-                    _ = SendInput(1, inputs, Marshal.SizeOf(typeof(INPUT)));
-                }
             }
         }
 
@@ -183,8 +191,8 @@ namespace Auto_Clicker
                 return;
             }
 
-            labelStatus.Text = status == Status.Active ? "Active" : "Inactive";
-            labelStatus.ForeColor = status == Status.Active ? Color.Green : Color.Red;
+            toolStripStatusLabel1.Text = status == Status.Active ? "Active" : "Inactive";
+            toolStripStatusLabel1.ForeColor = status == Status.Active ? Color.Green : Color.Red;
         }
 
         private void Form1_KeyDown(object? sender, KeyEventArgs e)
@@ -200,7 +208,8 @@ namespace Auto_Clicker
                     StartClicking();
                 }
             }
-            else if (e.KeyCode == Keys.Escape)
+
+            else if (e.KeyCode == Keys.End)// Panic Hotkey
             {
                 StopClicking();
                 _keyboardHook.KeyDown -= Form1_KeyDown;

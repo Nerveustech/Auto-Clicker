@@ -57,12 +57,13 @@
             label8 = new Label();
             label7 = new Label();
             button2 = new Button();
-            label9 = new Label();
-            labelStatus = new Label();
+            statusStrip1 = new StatusStrip();
+            toolStripStatusLabel1 = new ToolStripStatusLabel();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             groupBox3.SuspendLayout();
             groupBox4.SuspendLayout();
+            statusStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // button1
@@ -389,33 +390,28 @@
             button2.UseVisualStyleBackColor = true;
             button2.Click += Button2_Click;
             // 
-            // label9
+            // statusStrip1
             // 
-            label9.AutoSize = true;
-            label9.Location = new Point(390, 422);
-            label9.Margin = new Padding(4, 0, 4, 0);
-            label9.Name = "label9";
-            label9.Size = new Size(42, 15);
-            label9.TabIndex = 6;
-            label9.Text = "Status:";
+            statusStrip1.Items.AddRange(new ToolStripItem[] { toolStripStatusLabel1 });
+            statusStrip1.Location = new Point(0, 389);
+            statusStrip1.Name = "statusStrip1";
+            statusStrip1.Size = new Size(495, 22);
+            statusStrip1.SizingGrip = false;
+            statusStrip1.TabIndex = 8;
+            statusStrip1.Text = "statusStrip1";
             // 
-            // labelStatus
+            // toolStripStatusLabel1
             // 
-            labelStatus.AutoSize = true;
-            labelStatus.Location = new Point(432, 422);
-            labelStatus.Margin = new Padding(4, 0, 4, 0);
-            labelStatus.Name = "labelStatus";
-            labelStatus.Size = new Size(44, 15);
-            labelStatus.TabIndex = 7;
-            labelStatus.Text = "label10";
+            toolStripStatusLabel1.Name = "toolStripStatusLabel1";
+            toolStripStatusLabel1.Size = new Size(118, 17);
+            toolStripStatusLabel1.Text = "toolStripStatusLabel1";
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(495, 451);
-            Controls.Add(labelStatus);
-            Controls.Add(label9);
+            ClientSize = new Size(495, 411);
+            Controls.Add(statusStrip1);
             Controls.Add(button2);
             Controls.Add(groupBox4);
             Controls.Add(groupBox3);
@@ -437,6 +433,8 @@
             groupBox3.PerformLayout();
             groupBox4.ResumeLayout(false);
             groupBox4.PerformLayout();
+            statusStrip1.ResumeLayout(false);
+            statusStrip1.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -470,10 +468,10 @@
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.ComboBox comboBox2;
         private System.Windows.Forms.ComboBox comboBox1;
-        private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.Label labelStatus;
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.TextBox textBoxHotKey;
+        private StatusStrip statusStrip1;
+        private ToolStripStatusLabel toolStripStatusLabel1;
     }
 }
 
